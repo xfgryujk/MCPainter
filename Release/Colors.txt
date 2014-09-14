@@ -1,5 +1,5 @@
-格式：方块ID,方块数据,R,G,B
-如红色羊毛是35,14,150,52,48
+Format: block ID,block data,R,G,B
+For example, red wool is 35,14,150,52,48
 1,0,125,125,125
 2,0,124,111,65
 3,0,135,97,68
