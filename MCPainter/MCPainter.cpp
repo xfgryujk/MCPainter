@@ -10,13 +10,13 @@ using namespace Gdiplus;
 
 
 #pragma region
-// 全局:
+// global:
 HINSTANCE hInst;
 const TCHAR szTitle[]       = _T("MCPainter");
 const TCHAR szWindowClass[] = _T("MCPainter");
 HWND MainWnd, ChooseBtn, SaveBtn, ImageStatic, PreviewStatic;
 
-// 此代码模块中包含的函数的前向声明:
+// declarations:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
 BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -34,13 +34,13 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 
 	MyRegisterClass(hInstance);
 
-	// 执行应用程序初始化:
+	// initialize:
 	if (!InitInstance (hInstance, nCmdShow))
 	{
 		return FALSE;
 	}
 
-	// 主消息循环:
+	// message loop:
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg);
@@ -77,8 +77,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hInst = hInstance;
 
 	MainWnd = CreateWindow(szWindowClass, szTitle, WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_CAPTION | WS_SYSMENU | WS_GROUP
-		, (GetSystemMetrics(SM_CXSCREEN) - 654) / 2, (GetSystemMetrics(SM_CYSCREEN) - 413) / 2
-		, 654, 413, NULL, NULL, hInstance, NULL);
+		, (GetSystemMetrics(SM_CXSCREEN) - 654) / 2, (GetSystemMetrics(SM_CYSCREEN) - 405) / 2
+		, 654, 405, NULL, NULL, hInstance, NULL);
 
 	if (!MainWnd)
 	{
@@ -142,59 +142,56 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 }
 #pragma endregion
 
-// 主逻辑 ////////////////////////////////////////////////////////////////////////////////////
+// main logic ////////////////////////////////////////////////////////////////////////////////////
 
-static ULONG_PTR gdiplusToken;                   // GDI+初始化用
-static MDC BG;                                   // 图片框背景
-static ComDlg dlg;                               // 通用对话框
+static ULONG_PTR gdiplusToken;                   // used to initialize GDI+
+static MDC BG;                                   // the background of static control
+static ComDlg dlg;                               // common dialog
 
-static DWORD ImgWidth = 0, ImgHeight = 0;        // 图片宽高
-static DWORD FixedWidth = 0, FixedHeight = 0;    // 缩放后图片宽高
-static MDC mdc1, mdc2;                           // 内存DC，缓存图片和读取ARGB用
-static int* BlockIndex = NULL;                   // 转换后各像素对应颜色表中的索引，储存顺序从左到右从下到上
+static DWORD ImgWidth = 0, ImgHeight = 0;
+static DWORD FixedWidth = 0, FixedHeight = 0;    // the width and height after resizing
+static MDC mdc1, mdc2;                           // memory DC used to store image and read ARGB
+static int* BlockIndex = NULL;                   // the index of colors of each pixel, from left to right and from top to bottom
 
 
-// 主窗口创建
 void OnCreate(HWND hWnd)
 {
-	// 输入颜色
 	if(!InputColors())
 	{
-		MessageBox(MainWnd, _T("输入颜色失败！"), szTitle, MB_OK | MB_ICONERROR);
+		MessageBox(MainWnd, _T("Failed to input colors!"), szTitle, MB_OK | MB_ICONERROR);
 		DestroyWindow(hWnd);
 		return;
 	}
 
-	// GDI+初始化
+	// initialize GDI+
 	GdiplusStartupInput gdiplusStartupInput;
 	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
-	// 图片框背景初始化
+	// load the background of static control
 	Image Img(L"BG.png");
 	BG.Create(300, 300);
 	Graphics Graph(BG.GetHDC());
 	Graph.DrawImage(&Img, 0, 0, Img.GetWidth(), Img.GetHeight());
 
-	// 通用对话框初始化
+	// initialize the common dialog
 	dlg.Init(hWnd, hInst);
 
-	// 建立子窗口
-	ChooseBtn     = CreateWindow(_T("Button"), _T("选择图片"), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON
+	// create controls
+	ChooseBtn     = CreateWindow(_T("Button"), _T("Browse"), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON
 		, 216, 332, 100,  30, hWnd, (HMENU)ID_Choose, hInst, NULL);
-	SaveBtn       = CreateWindow(_T("Button"), _T("生成"), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON
+	SaveBtn       = CreateWindow(_T("Button"), _T("Save"), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_PUSHBUTTON
 		, 332, 332, 100,  30, hWnd, (HMENU)ID_Save, hInst, NULL);
 	ImageStatic   = CreateWindow(_T("Static"), NULL, WS_CHILD | WS_VISIBLE | SS_OWNERDRAW
 		,  16,  16, 300, 300, hWnd, (HMENU)ID_Image, hInst, NULL);
 	PreviewStatic = CreateWindow(_T("Static"), NULL, WS_CHILD | WS_VISIBLE | SS_OWNERDRAW
 		, 332,  16, 300, 300, hWnd, (HMENU)ID_Preview, hInst, NULL);
 
-	// 设置字体
+	// set the font of buttons
 	HFONT font = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
 	SendMessage(ChooseBtn, WM_SETFONT, (WPARAM)font, 1);
 	SendMessage(SaveBtn, WM_SETFONT, (WPARAM)font, 1);
 }
 
-// 主窗口销毁
 void OnDestroy()
 {
 	if(BlockIndex != NULL)
@@ -205,7 +202,6 @@ void OnDestroy()
 	GdiplusShutdown(gdiplusToken); 
 }
 
-// Image绘图
 void Image_OnDraw(HDC hdc)
 {
 	RECT rect = {0, 0, 300, 300};
@@ -223,7 +219,6 @@ void Image_OnDraw(HDC hdc)
 	FrameRect(hdc, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
 }
 
-// 预览绘图
 void Preview_OnDraw(HDC hdc)
 {
 	RECT rect = {0, 0, 300, 300};
@@ -241,29 +236,27 @@ void Preview_OnDraw(HDC hdc)
 	FrameRect(hdc, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
 }
 
-// 选择图片按钮按下
 void Choose_OnClick()
 {
-	// 通用对话框选图片
-	const TCHAR* Filter = _T("图片文件(*.jpg;*.png;*.bmp)\0*.jpg;*.png;*.bmp\0") \
-		_T("所有文件(*.*)\0*.*\0");
+	const TCHAR* Filter = _T("Image files(*.jpg;*.png;*.bmp)\0*.jpg;*.png;*.bmp\0") \
+		_T("All files(*.*)\0*.*\0");
 	TCHAR FileName[MAX_PATH];
 
 	if(!dlg.OpenFile(FileName, Filter, _T("jpg")))
 		return;
 
-	// 读取图片
+	// load the image
 	Image Img(FileName);
 	ImgWidth  = Img.GetWidth();
 	ImgHeight = Img.GetHeight();
 
-	// 缩放
+	// resize
 	if(ImgWidth > 300 || ImgHeight > 300)
 	{
 		if(ImgWidth > ImgHeight)
 		{
-			FixedHeight = (DWORD)((float)ImgHeight / ImgWidth * 300);
 			FixedWidth  = 300;
+			FixedHeight = (DWORD)((float)ImgHeight / ImgWidth * 300);
 		}
 		else
 		{
@@ -277,41 +270,41 @@ void Choose_OnClick()
 		FixedHeight = ImgHeight;
 	}
 	if((ImgWidth > 300 || ImgHeight > 300)
-		&& MessageBox(MainWnd, _T("是否缩放到300x300内？"), szTitle, MB_YESNO | MB_ICONQUESTION) == IDYES)
+		&& MessageBox(MainWnd, _T("Your image is too large, Do you want to narrow it?"), szTitle, MB_YESNO | MB_ICONQUESTION) == IDYES)
 	{
 		ImgWidth  = FixedWidth;
 		ImgHeight = FixedHeight;
 	}
 
-	// 画到mdc1上
+	// draw it to mdc1
 	mdc1.Create(ImgWidth, ImgHeight);
 	Graphics Graph(mdc1.GetHDC());
 	Graph.DrawImage(&Img, 0, 0, ImgWidth, ImgHeight);
 
-	// 转换成最接近的颜色
+	// convert its colors with colors table
 	mdc2.Create(ImgWidth, ImgHeight);
-	int len = ImgWidth * ImgHeight, index; // 图片像素数，最近颜色索引
+	int len = ImgWidth * ImgHeight, index; // length of the image, index of the closest color
 	if(BlockIndex != NULL)
 		delete BlockIndex;
 	BlockIndex = new int[len];
 	for(int i = 0; i < len; i++)
 	{
-		if((mdc1.GetData() + i) -> byColor.A > 229) // 忽略不透明度<90%的
+		if((mdc1.GetData() + i) -> byColor.A > 229) // replace pixels whose Alpha < 90% with air block
 		{
 			index = GetNearestColorIndex(*(mdc1.GetData() + i));
-			BlockIndex[i] = index; //储存顺序从左到右从下到上
+			BlockIndex[i] = index; // from left to right and from top to bottom
 			(mdc2.GetData() + i) -> crColor = Colors[index].crColor;
 		}
 		else
-			BlockIndex[i] = -1; // 忽略，空气方块
+			BlockIndex[i] = -1; // -1 stands for air block
 	}
 
-	// 重画Static
+	// redraw statics
 	InvalidateRect(ImageStatic, NULL, TRUE);
 	InvalidateRect(PreviewStatic, NULL, TRUE);
 }
 
-// 倒转int的4个字节
+// reverse 4 bytes
 inline DWORD ReverseInt(DWORD x)
 {
 	DWORD ans;
@@ -322,7 +315,7 @@ inline DWORD ReverseInt(DWORD x)
 	return ans;
 }
 
-// 倒转short的2个字节
+// reverse 2 bytes
 inline DWORD ReverseShort(DWORD x)
 {
 	DWORD ans;
@@ -331,15 +324,14 @@ inline DWORD ReverseShort(DWORD x)
 	return ans;
 }
 
-// 生成按钮按下
 void Save_OnClick()
 {
-    const TCHAR* Filter = _T("schematic文件(*.schematic)\0*.schematic\0");
+    const TCHAR* Filter = _T("schematic files(*.schematic)\0*.schematic\0");
 	TCHAR FileName[MAX_PATH];
 
 	if(BlockIndex == NULL)
 	{
-		MessageBox(MainWnd, _T("请先选择图片！"), szTitle, MB_OK | MB_ICONERROR);
+		MessageBox(MainWnd, _T("Please choose an image first！"), szTitle, MB_OK | MB_ICONERROR);
 		return;
 	}
 
@@ -347,102 +339,101 @@ void Save_OnClick()
 		return;
 
 //#define USE_WRITEFILE
-#ifdef USE_WRITEFILE // 比fwrite慢很多！
+#ifdef USE_WRITEFILE // somehow very slow!
 	
 	HANDLE f = CreateFile(FileName, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if(f == INVALID_HANDLE_VALUE)
 	{
-		MessageBox(MainWnd, _T("打开文件失败！"), szTitle, MB_OK | MB_ICONERROR);
+		MessageBox(MainWnd, _T("Failed to create file!"), szTitle, MB_OK | MB_ICONERROR);
 		return;
 	}
 
-	// 写文件
 	DWORD data, tmp;
-	// 头
-	data = 0x0A; // TAG_Compound
+	// head
+	data = 0x0A;                              // TAG_Compound
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0900; // 标签名长度
+	data = 0x0900;                            // the lenth of tag name
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Schematic", 9, &tmp, NULL); // 标签名
+	WriteFile(f, "Schematic", 9, &tmp, NULL); // tag name
 	
-	// 高长度 = 1
-	data = 0x02; // TAG_Short
+	// length in Y = 1
+	data = 0x02;                              // TAG_Short
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0600; // 标签名长度
+	data = 0x0600;                            // the lenth of tag name
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Height", 6, &tmp, NULL); // 标签名
-	data = 0x0100; // 值
+	WriteFile(f, "Height", 6, &tmp, NULL);    // tag name
+	data = 0x0100;                            // value
 	WriteFile(f, &data, 2, &tmp, NULL);
 
-	// 纵长度
-	data = 0x02; // TAG_Short
+	// length in Z
+	data = 0x02;                              // TAG_Short
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0600; // 标签名长度
+	data = 0x0600;                            // the lenth of tag name
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Length", 6, &tmp, NULL); // 标签名
-	data = ReverseShort(ImgHeight); // 值
+	WriteFile(f, "Length", 6, &tmp, NULL);    // tag name
+	data = ReverseShort(ImgHeight);           // value
 	WriteFile(f, &data, 2, &tmp, NULL);
 
-	// 横长度
-	data = 0x02;//TAG_Short
+	// length in X
+	data = 0x02;                              // TAG_Short
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0500; // 标签名长度
+	data = 0x0500;                            // the lenth of tag name
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Width", 5, &tmp, NULL); // 标签名
-	data = ReverseShort(ImgWidth); // 值
+	WriteFile(f, "Width", 5, &tmp, NULL);     // tag name
+	data = ReverseShort(ImgWidth);            // value
 	WriteFile(f, &data, 2, &tmp, NULL);
 
-	// 无实体
-	data = 0x09; // TAG_List
+	// no entity
+	data = 0x09;                              // TAG_List
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0800; // 标签名长度
+	data = 0x0800;                            // the lenth of tag name
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Entities", 8, &tmp, NULL); // 标签名
+	WriteFile(f, "Entities", 8, &tmp, NULL);  // tag name
 	data = 0x0A;
 	WriteFile(f, &data, 1, &tmp, NULL);
 	data = 0;
 	WriteFile(f, &data, 4, &tmp, NULL);
 
-	// 无方块实体
-	data = 0x09; // TAG_List
+	// no tile entity
+	data = 0x09;                                  // TAG_List
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0C00; // 标签名长度
+	data = 0x0C00;                                // the lenth of tag name
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "TileEntities", 12, &tmp, NULL); // 标签名
+	WriteFile(f, "TileEntities", 12, &tmp, NULL); // tag name
 	data = 0x0A;
 	WriteFile(f, &data, 1, &tmp, NULL);
 	data = 0;
 	WriteFile(f, &data, 4, &tmp, NULL);
 
 
-	// 版本 = "Alpha"
-	data = 0x08; // TAG_String
+	// version = "Alpha"
+	data = 0x08;                              // TAG_String
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0900; // 标签名长度
+	data = 0x0900;                            // the lenth of tag name
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Materials", 9, &tmp, NULL); // 标签名
-	data = 0x0500; // 值长度
+	WriteFile(f, "Materials", 9, &tmp, NULL); // tag name
+	data = 0x0500;                            // the lenth of value
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Alpha", 5, &tmp, NULL); // 值
+	WriteFile(f, "Alpha", 5, &tmp, NULL);     // value
 
-	// 方块ID
-	data = 0x07; // TAG_Byte_Array
+	// block ID
+	data = 0x07;                              // TAG_Byte_Array
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0600; // 标签名长度
+	data = 0x0600;                            // the lenth of tag name
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Blocks", 6, &tmp, NULL); // 标签名
+	WriteFile(f, "Blocks", 6, &tmp, NULL);    // tag name
 	int len = ImgWidth * ImgHeight;
-	data = ReverseInt(len); // 值长度
+	data = ReverseInt(len);                   // the lenth of value
 	WriteFile(f, &data, 4, &tmp, NULL);
-	// *从左到右从上到下*写出方块ID
-	int *pIndex, iIndex; // 当前索引指针，值
+	// write block ID *from left to right and from top to bottom*
+	int *pIndex, iIndex;                      // pointer to current block index, block index
 	pIndex = BlockIndex + len - ImgWidth;
 	for(DWORD y = 0; y < ImgHeight; y++)
 	{
 		for(DWORD x = 0; x < ImgWidth; x++)
 		{
 			iIndex = *pIndex;
-			if(iIndex == -1) // -1换成空气方块
+			if(iIndex == -1)                  // replace -1 with air block
 				data = 0;
 			else
 				data = ID[iIndex];
@@ -452,22 +443,22 @@ void Save_OnClick()
 		pIndex -= ImgWidth * 2;
 	}
 
-	// 方块数据
-	data = 0x07; // TAG_Byte_Array
+	// blcok data
+	data = 0x07;                              // TAG_Byte_Array
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0400;//标签名长度
+	data = 0x0400;                            // the lenth of tag name
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Data", 4, &tmp, NULL); // 标签名
-	data = ReverseInt(len); // 值长度
+	WriteFile(f, "Data", 4, &tmp, NULL);      // tag name
+	data = ReverseInt(len);                   // the lenth of value
 	WriteFile(f, &data, 4, &tmp, NULL);
-	// *从左到右从上到下*写出方块数据
+	// write block data *from left to right and from top to bottom*
 	pIndex = BlockIndex + len - ImgWidth;
 	for(DWORD y = 0; y < ImgHeight; y++)
 	{
 		for(DWORD x = 0; x < ImgWidth; x++)
 		{
 			iIndex = *pIndex;
-			if(iIndex == -1) // -1换成空气方块
+			if(iIndex == -1)                  // replace -1 with air block
 				data = 0;
 			else
 				data = Data[iIndex];
@@ -477,8 +468,8 @@ void Save_OnClick()
 		pIndex -= ImgWidth * 2;
 	}
 
-	// 尾
-	data = 0x00; // TAG_End
+	// end
+	data = 0x00;                             // TAG_End
 	WriteFile(f, &data, 1, &tmp, NULL);
 
 	CloseHandle(f);
@@ -489,97 +480,96 @@ void Save_OnClick()
 	_tfopen_s(&f, FileName, _T("wb"));
 	if(f == NULL)
 	{
-		MessageBox(MainWnd, _T("打开文件失败！"), szTitle, MB_OK | MB_ICONERROR);
+		MessageBox(MainWnd, _T("Failed to create file!"), szTitle, MB_OK | MB_ICONERROR);
 		return;
 	}
 
-	// 写文件
 	DWORD data;
-	// 头
-	data = 0x0A; // TAG_Compound
+	// head
+	data = 0x0A;                              // TAG_Compound
 	fwrite(&data, 1, 1, f);
-	data = 0x0900; // 标签名长度
+	data = 0x0900;                            // the lenth of tag name
 	fwrite(&data, 2, 1, f);
-	fwrite("Schematic", 9, 1, f); // 标签名
+	fwrite("Schematic", 9, 1, f);             // tag name
 	
-	// 高长度 = 1
-	data = 0x02; // TAG_Short
+	// length in Y = 1
+	data = 0x02;                              // TAG_Short
 	fwrite(&data, 1, 1, f);
-	data = 0x0600; // 标签名长度
+	data = 0x0600;                            // the lenth of tag name
 	fwrite(&data, 2, 1, f);
-	fwrite("Height", 6, 1, f); // 标签名
-	data = 0x0100; // 值
+	fwrite("Height", 6, 1, f);                // tag name
+	data = 0x0100;                            // value
 	fwrite(&data, 2, 1, f);
 
-	// 纵长度
-	data = 0x02; // TAG_Short
+	// length in Z
+	data = 0x02;                              // TAG_Short
 	fwrite(&data, 1, 1, f);
-	data = 0x0600; // 标签名长度
+	data = 0x0600;                            // the lenth of tag name
 	fwrite(&data, 2, 1, f);
-	fwrite("Length", 6, 1, f); // 标签名
-	data = ReverseShort(ImgHeight); // 值
+	fwrite("Length", 6, 1, f);                // tag name
+	data = ReverseShort(ImgHeight);           // value
 	fwrite(&data, 2, 1, f);
 
-	// 横长度
-	data = 0x02; // TAG_Short
+	// length in X
+	data = 0x02;                              // TAG_Short
 	fwrite(&data, 1, 1, f);
-	data = 0x0500; // 标签名长度
+	data = 0x0500;                            // the lenth of tag name
 	fwrite(&data, 2, 1, f);
-	fwrite("Width", 5, 1, f); // 标签名
-	data = ReverseShort(ImgWidth); // 值
+	fwrite("Width", 5, 1, f);                 // tag name
+	data = ReverseShort(ImgWidth);            // value
 	fwrite(&data, 2, 1, f);
 
-	// 无实体
-	data = 0x09; // TAG_List
+	// no entity
+	data = 0x09;                              // TAG_List
 	fwrite(&data, 1, 1, f);
-	data = 0x0800; // 标签名长度
+	data = 0x0800;                            // the lenth of tag name
 	fwrite(&data, 2, 1, f);
-	fwrite("Entities", 8, 1, f); // 标签名
+	fwrite("Entities", 8, 1, f);              // tag name
 	data = 0x0A;
 	fwrite(&data, 1, 1, f);
 	data = 0;
 	fwrite(&data, 4, 1, f);
 
-	// 无方块实体
-	data = 0x09; // TAG_List
+	// no tile entity
+	data = 0x09;                              // TAG_List
 	fwrite(&data, 1, 1, f);
-	data = 0x0C00; // 标签名长度
+	data = 0x0C00;                            // the lenth of tag name
 	fwrite(&data, 2, 1, f);
-	fwrite("TileEntities", 12, 1, f); // 标签名
+	fwrite("TileEntities", 12, 1, f);         // tag name
 	data = 0x0A;
 	fwrite(&data, 1, 1, f);
 	data = 0;
 	fwrite(&data, 4, 1, f);
 
 
-	// 版本 = "Alpha"
-	data = 0x08; // TAG_String
+	// version = "Alpha"
+	data = 0x08;                              // TAG_String
 	fwrite(&data, 1, 1, f);
-	data = 0x0900; // 标签名长度
+	data = 0x0900;                            // the lenth of tag name
 	fwrite(&data, 2, 1, f);
-	fwrite("Materials", 9, 1, f); // 标签名
-	data = 0x0500; // 值长度
+	fwrite("Materials", 9, 1, f);             // tag name
+	data = 0x0500;                            // the lenth of value
 	fwrite(&data, 2, 1, f);
-	fwrite("Alpha", 5, 1, f); // 值
+	fwrite("Alpha", 5, 1, f);                 // value
 
-	// 方块ID
-	data = 0x07; // TAG_Byte_Array
+	// block ID
+	data = 0x07;                              // TAG_Byte_Array
 	fwrite(&data, 1, 1, f);
-	data = 0x0600; // 标签名长度
+	data = 0x0600;                            // the lenth of tag name
 	fwrite(&data, 2, 1, f);
-	fwrite("Blocks", 6, 1, f); // 标签名
+	fwrite("Blocks", 6, 1, f);                // tag name
 	int Len = ImgWidth * ImgHeight;
-	data = ReverseInt(Len); // 值长度
+	data = ReverseInt(Len);                   // the lenth of value
 	fwrite(&data, 4, 1, f);
-	// *从左到右从上到下*写出方块ID
-	int *pIndex, iIndex; // 当前索引指针，值
+	// write block ID *from left to right and from top to bottom*
+	int *pIndex, iIndex;                      // pointer to current block index, block index
 	pIndex = BlockIndex + Len - ImgWidth;
 	for(DWORD y = 0; y < ImgHeight; y++)
 	{
 		for(DWORD x = 0; x < ImgWidth; x++)
 		{
 			iIndex = *pIndex;
-			if(iIndex == -1) // -1换成空气方块
+			if(iIndex == -1)                  // replace -1 with air block
 				data = 0;
 			else
 				data = ID[iIndex];
@@ -589,22 +579,22 @@ void Save_OnClick()
 		pIndex -= ImgWidth * 2;
 	}
 
-	// 方块数据
-	data = 0x07; // TAG_Byte_Array
+	// block data
+	data = 0x07;                              // TAG_Byte_Array
 	fwrite(&data, 1, 1, f);
-	data = 0x0400; // 标签名长度
+	data = 0x0400;                            // the lenth of tag name
 	fwrite(&data, 2, 1, f);
-	fwrite("Data", 4, 1, f); // 标签名
-	data = ReverseInt(Len); // 值长度
+	fwrite("Data", 4, 1, f);                  // tag name
+	data = ReverseInt(Len);                   // the lenth of value
 	fwrite(&data, 4, 1, f);
-	// *从左到右从上到下*写出方块数据
+	// write block data *from left to right and from top to bottom*
 	pIndex = BlockIndex + Len - ImgWidth;
 	for(DWORD y = 0; y < ImgHeight; y++)
 	{
 		for(DWORD x = 0; x < ImgWidth; x++)
 		{
 			iIndex = *pIndex;
-			if(iIndex == -1) // -1换成空气方块
+			if(iIndex == -1)                  // replace -1 with air block
 				data = 0;
 			else
 				data = Data[iIndex];
@@ -614,13 +604,13 @@ void Save_OnClick()
 		pIndex -= ImgWidth * 2;
 	}
 
-	// 尾
-	data = 0x00; // TAG_End
+	// end
+	data = 0x00;                             // TAG_End
 	fwrite(&data, 1, 1, f);
 
 	fclose(f);
 
 #endif
 
-	// 然后可以用gzip压缩也可以不压缩
+	// then you can gzip it or not
 }

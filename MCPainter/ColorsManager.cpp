@@ -5,9 +5,9 @@
 #include <math.h>
 
 
-COLOR Colors[MAXNCOLOR];                 // 颜色表
-BYTE ID[MAXNCOLOR], Data[MAXNCOLOR];     // MC方块ID，数据
-int nColor = 0;                          // 颜色数量
+int nColor = 0;                          // the number of Colors
+COLOR Colors[MAXNCOLOR];                 // colors table
+BYTE ID[MAXNCOLOR], Data[MAXNCOLOR];     // block ID and data in Minecraft
 
 
 BOOL InputColors()
@@ -40,18 +40,18 @@ inline float square(float x)
 	return x * x;
 }
 
-// 取颜色差距
+// get the difference of 2 colors
 float GetSquareDist(BYTE x1, BYTE y1, BYTE z1, BYTE x2, BYTE y2, BYTE z2)
 {
 	return square((float)(x1 - x2)) + square((float)(y1 - y2)) + square((float)(z1 - z2));
 }
 
-// 取最近颜色索引
+// get the index of the closest color
 int GetNearestColorIndex(COLOR color)
 {
-	// 最近颜色索引
+	// the index of the closest color
 	int index = 0;
-	// 最小颜色差距
+	// min difference
 	float min = GetSquareDist(color.byColor.R, color.byColor.G, color.byColor.B,
 		Colors[0].byColor.R, Colors[0].byColor.G, Colors[0].byColor.B);
 	for(int i = 1; i < nColor; i++)
