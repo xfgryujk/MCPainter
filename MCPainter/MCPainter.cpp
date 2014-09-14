@@ -77,8 +77,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	hInst = hInstance;
 
 	MainWnd = CreateWindow(szWindowClass, szTitle, WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_CAPTION | WS_SYSMENU | WS_GROUP
-		, (GetSystemMetrics(SM_CXSCREEN) - 654) / 2, (GetSystemMetrics(SM_CYSCREEN) - 413) / 2
-		, 654, 413, NULL, NULL, hInstance, NULL);
+		, (GetSystemMetrics(SM_CXSCREEN) - 654) / 2, (GetSystemMetrics(SM_CYSCREEN) - 405) / 2
+		, 654, 405, NULL, NULL, hInstance, NULL);
 
 	if (!MainWnd)
 	{
@@ -356,57 +356,56 @@ void Save_OnClick()
 		return;
 	}
 
-	// 写文件
 	DWORD data, tmp;
 	// 头
-	data = 0x0A; // TAG_Compound
+	data = 0x0A;                                 // TAG_Compound
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0900; // 标签名长度
+	data = 0x0900;                               // 标签名长度
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Schematic", 9, &tmp, NULL); // 标签名
+	WriteFile(f, "Schematic", 9, &tmp, NULL);    // 标签名
 	
-	// 高长度 = 1
-	data = 0x02; // TAG_Short
+	// Y长度 = 1
+	data = 0x02;                                 // TAG_Short
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0600; // 标签名长度
+	data = 0x0600;                               // 标签名长度
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Height", 6, &tmp, NULL); // 标签名
+	WriteFile(f, "Height", 6, &tmp, NULL);       // 标签名
 	data = 0x0100; // 值
 	WriteFile(f, &data, 2, &tmp, NULL);
 
-	// 纵长度
-	data = 0x02; // TAG_Short
+	// Z长度
+	data = 0x02;                                 // TAG_Short
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0600; // 标签名长度
+	data = 0x0600;                               // 标签名长度
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Length", 6, &tmp, NULL); // 标签名
-	data = ReverseShort(ImgHeight); // 值
+	WriteFile(f, "Length", 6, &tmp, NULL);       // 标签名
+	data = ReverseShort(ImgHeight);              // 值
 	WriteFile(f, &data, 2, &tmp, NULL);
 
-	// 横长度
-	data = 0x02;//TAG_Short
+	// X长度
+	data = 0x02;                                 // TAG_Short
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0500; // 标签名长度
+	data = 0x0500;                               // 标签名长度
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Width", 5, &tmp, NULL); // 标签名
-	data = ReverseShort(ImgWidth); // 值
+	WriteFile(f, "Width", 5, &tmp, NULL);        // 标签名
+	data = ReverseShort(ImgWidth);               // 值
 	WriteFile(f, &data, 2, &tmp, NULL);
 
 	// 无实体
-	data = 0x09; // TAG_List
+	data = 0x09;                                 // TAG_List
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0800; // 标签名长度
+	data = 0x0800;                               // 标签名长度
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Entities", 8, &tmp, NULL); // 标签名
+	WriteFile(f, "Entities", 8, &tmp, NULL);     // 标签名
 	data = 0x0A;
 	WriteFile(f, &data, 1, &tmp, NULL);
 	data = 0;
 	WriteFile(f, &data, 4, &tmp, NULL);
 
 	// 无方块实体
-	data = 0x09; // TAG_List
+	data = 0x09;                                  // TAG_List
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0C00; // 标签名长度
+	data = 0x0C00;                                // 标签名长度
 	WriteFile(f, &data, 2, &tmp, NULL);
 	WriteFile(f, "TileEntities", 12, &tmp, NULL); // 标签名
 	data = 0x0A;
@@ -416,33 +415,33 @@ void Save_OnClick()
 
 
 	// 版本 = "Alpha"
-	data = 0x08; // TAG_String
+	data = 0x08;                                  // TAG_String
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0900; // 标签名长度
+	data = 0x0900;                                // 标签名长度
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Materials", 9, &tmp, NULL); // 标签名
-	data = 0x0500; // 值长度
+	WriteFile(f, "Materials", 9, &tmp, NULL);     // 标签名
+	data = 0x0500;                                // 值长度
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Alpha", 5, &tmp, NULL); // 值
+	WriteFile(f, "Alpha", 5, &tmp, NULL);         // 值
 
 	// 方块ID
-	data = 0x07; // TAG_Byte_Array
+	data = 0x07;                                  // TAG_Byte_Array
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0600; // 标签名长度
+	data = 0x0600;                                // 标签名长度
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Blocks", 6, &tmp, NULL); // 标签名
+	WriteFile(f, "Blocks", 6, &tmp, NULL);        // 标签名
 	int len = ImgWidth * ImgHeight;
-	data = ReverseInt(len); // 值长度
+	data = ReverseInt(len);                       // 值长度
 	WriteFile(f, &data, 4, &tmp, NULL);
 	// *从左到右从上到下*写出方块ID
-	int *pIndex, iIndex; // 当前索引指针，值
+	int *pIndex, iIndex;                          // 当前索引指针，值
 	pIndex = BlockIndex + len - ImgWidth;
 	for(DWORD y = 0; y < ImgHeight; y++)
 	{
 		for(DWORD x = 0; x < ImgWidth; x++)
 		{
 			iIndex = *pIndex;
-			if(iIndex == -1) // -1换成空气方块
+			if(iIndex == -1)                      // -1换成空气方块
 				data = 0;
 			else
 				data = ID[iIndex];
@@ -453,12 +452,12 @@ void Save_OnClick()
 	}
 
 	// 方块数据
-	data = 0x07; // TAG_Byte_Array
+	data = 0x07;                                 // TAG_Byte_Array
 	WriteFile(f, &data, 1, &tmp, NULL);
-	data = 0x0400;//标签名长度
+	data = 0x0400;                               // 标签名长度
 	WriteFile(f, &data, 2, &tmp, NULL);
-	WriteFile(f, "Data", 4, &tmp, NULL); // 标签名
-	data = ReverseInt(len); // 值长度
+	WriteFile(f, "Data", 4, &tmp, NULL);         // 标签名
+	data = ReverseInt(len);                      // 值长度
 	WriteFile(f, &data, 4, &tmp, NULL);
 	// *从左到右从上到下*写出方块数据
 	pIndex = BlockIndex + len - ImgWidth;
@@ -467,7 +466,7 @@ void Save_OnClick()
 		for(DWORD x = 0; x < ImgWidth; x++)
 		{
 			iIndex = *pIndex;
-			if(iIndex == -1) // -1换成空气方块
+			if(iIndex == -1)                     // -1换成空气方块
 				data = 0;
 			else
 				data = Data[iIndex];
@@ -478,7 +477,7 @@ void Save_OnClick()
 	}
 
 	// 尾
-	data = 0x00; // TAG_End
+	data = 0x00;                                // TAG_End
 	WriteFile(f, &data, 1, &tmp, NULL);
 
 	CloseHandle(f);
@@ -493,59 +492,58 @@ void Save_OnClick()
 		return;
 	}
 
-	// 写文件
 	DWORD data;
 	// 头
-	data = 0x0A; // TAG_Compound
+	data = 0x0A;                                 // TAG_Compound
 	fwrite(&data, 1, 1, f);
-	data = 0x0900; // 标签名长度
+	data = 0x0900;                               // 标签名长度
 	fwrite(&data, 2, 1, f);
-	fwrite("Schematic", 9, 1, f); // 标签名
+	fwrite("Schematic", 9, 1, f);                // 标签名
 	
-	// 高长度 = 1
-	data = 0x02; // TAG_Short
+	// Y长度 = 1
+	data = 0x02;                                 // TAG_Short
 	fwrite(&data, 1, 1, f);
-	data = 0x0600; // 标签名长度
+	data = 0x0600;                               // 标签名长度
 	fwrite(&data, 2, 1, f);
-	fwrite("Height", 6, 1, f); // 标签名
-	data = 0x0100; // 值
+	fwrite("Height", 6, 1, f);                   // 标签名
+	data = 0x0100;                               // 值
 	fwrite(&data, 2, 1, f);
 
-	// 纵长度
-	data = 0x02; // TAG_Short
+	// Z长度
+	data = 0x02;                                 // TAG_Short
 	fwrite(&data, 1, 1, f);
-	data = 0x0600; // 标签名长度
+	data = 0x0600;                               // 标签名长度
 	fwrite(&data, 2, 1, f);
-	fwrite("Length", 6, 1, f); // 标签名
-	data = ReverseShort(ImgHeight); // 值
+	fwrite("Length", 6, 1, f);                   // 标签名
+	data = ReverseShort(ImgHeight);              // 值
 	fwrite(&data, 2, 1, f);
 
-	// 横长度
-	data = 0x02; // TAG_Short
+	// X长度
+	data = 0x02;                                 // TAG_Short
 	fwrite(&data, 1, 1, f);
-	data = 0x0500; // 标签名长度
+	data = 0x0500;                               // 标签名长度
 	fwrite(&data, 2, 1, f);
-	fwrite("Width", 5, 1, f); // 标签名
-	data = ReverseShort(ImgWidth); // 值
+	fwrite("Width", 5, 1, f);                    // 标签名
+	data = ReverseShort(ImgWidth);               // 值
 	fwrite(&data, 2, 1, f);
 
 	// 无实体
-	data = 0x09; // TAG_List
+	data = 0x09;                                 // TAG_List
 	fwrite(&data, 1, 1, f);
-	data = 0x0800; // 标签名长度
+	data = 0x0800;                               // 标签名长度
 	fwrite(&data, 2, 1, f);
-	fwrite("Entities", 8, 1, f); // 标签名
+	fwrite("Entities", 8, 1, f);                 // 标签名
 	data = 0x0A;
 	fwrite(&data, 1, 1, f);
 	data = 0;
 	fwrite(&data, 4, 1, f);
 
 	// 无方块实体
-	data = 0x09; // TAG_List
+	data = 0x09;                                 // TAG_List
 	fwrite(&data, 1, 1, f);
-	data = 0x0C00; // 标签名长度
+	data = 0x0C00;                               // 标签名长度
 	fwrite(&data, 2, 1, f);
-	fwrite("TileEntities", 12, 1, f); // 标签名
+	fwrite("TileEntities", 12, 1, f);            // 标签名
 	data = 0x0A;
 	fwrite(&data, 1, 1, f);
 	data = 0;
@@ -553,33 +551,33 @@ void Save_OnClick()
 
 
 	// 版本 = "Alpha"
-	data = 0x08; // TAG_String
+	data = 0x08;                                 // TAG_String
 	fwrite(&data, 1, 1, f);
-	data = 0x0900; // 标签名长度
+	data = 0x0900;                               // 标签名长度
 	fwrite(&data, 2, 1, f);
-	fwrite("Materials", 9, 1, f); // 标签名
-	data = 0x0500; // 值长度
+	fwrite("Materials", 9, 1, f);                // 标签名
+	data = 0x0500;                               // 值长度
 	fwrite(&data, 2, 1, f);
-	fwrite("Alpha", 5, 1, f); // 值
+	fwrite("Alpha", 5, 1, f);                    // 值
 
 	// 方块ID
-	data = 0x07; // TAG_Byte_Array
+	data = 0x07;                                 // TAG_Byte_Array
 	fwrite(&data, 1, 1, f);
-	data = 0x0600; // 标签名长度
+	data = 0x0600;                               // 标签名长度
 	fwrite(&data, 2, 1, f);
-	fwrite("Blocks", 6, 1, f); // 标签名
+	fwrite("Blocks", 6, 1, f);                   // 标签名
 	int Len = ImgWidth * ImgHeight;
-	data = ReverseInt(Len); // 值长度
+	data = ReverseInt(Len);                      // 值长度
 	fwrite(&data, 4, 1, f);
 	// *从左到右从上到下*写出方块ID
-	int *pIndex, iIndex; // 当前索引指针，值
+	int *pIndex, iIndex;                         // 当前索引指针，值
 	pIndex = BlockIndex + Len - ImgWidth;
 	for(DWORD y = 0; y < ImgHeight; y++)
 	{
 		for(DWORD x = 0; x < ImgWidth; x++)
 		{
 			iIndex = *pIndex;
-			if(iIndex == -1) // -1换成空气方块
+			if(iIndex == -1)                     // -1换成空气方块
 				data = 0;
 			else
 				data = ID[iIndex];
@@ -590,12 +588,12 @@ void Save_OnClick()
 	}
 
 	// 方块数据
-	data = 0x07; // TAG_Byte_Array
+	data = 0x07;                                 // TAG_Byte_Array
 	fwrite(&data, 1, 1, f);
-	data = 0x0400; // 标签名长度
+	data = 0x0400;                               // 标签名长度
 	fwrite(&data, 2, 1, f);
-	fwrite("Data", 4, 1, f); // 标签名
-	data = ReverseInt(Len); // 值长度
+	fwrite("Data", 4, 1, f);                     // 标签名
+	data = ReverseInt(Len);                      // 值长度
 	fwrite(&data, 4, 1, f);
 	// *从左到右从上到下*写出方块数据
 	pIndex = BlockIndex + Len - ImgWidth;
@@ -604,7 +602,7 @@ void Save_OnClick()
 		for(DWORD x = 0; x < ImgWidth; x++)
 		{
 			iIndex = *pIndex;
-			if(iIndex == -1) // -1换成空气方块
+			if(iIndex == -1)                     // -1换成空气方块
 				data = 0;
 			else
 				data = Data[iIndex];
@@ -615,7 +613,7 @@ void Save_OnClick()
 	}
 
 	// 尾
-	data = 0x00; // TAG_End
+	data = 0x00;                                 // TAG_End
 	fwrite(&data, 1, 1, f);
 
 	fclose(f);
