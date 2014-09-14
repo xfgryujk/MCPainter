@@ -2,6 +2,7 @@
 /MCPainter/Release/
 /MCPainter/ipch/
 *.sdf
+*.opensdf
 *.pdb
 
 # Compiled Object files
